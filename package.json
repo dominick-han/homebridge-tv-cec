@@ -1,0 +1,22 @@
+{
+  "name": "homebridge-hdmi-cec",
+  "version": "0.1.0",
+  "description": "Homebridge support for TV power on/off, source selection, using HDMI-CEC",
+  "main": "index.js",
+  "keywords": [
+    "homebridge-plugin"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dominick-han/homebridge-hdmi-cec.git"
+  },
+  "author": "Dominick Han",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/dominick-han/homebridge-hdmi-cec/issues"
+  },
+  "homepage": "https://github.com/dominick-han/homebridge-hdmi-cec#readme",
+  "engines": {
+    "homebridge": ">=0.2.0"
+  }
+}
