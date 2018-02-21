@@ -1,25 +1,19 @@
 let Service, Characteristic;
 const { spawn } = require('child_process');
 const cec_client = spawn('cec-client', ['-d', '8']);
-let cec_output = [], cec_callback = null;
+let cec_callback = null;
 
 cec_client.stdout.on('data', function(data) {
 	data = data.toString();
 	if (data.indexOf('>> 01:46') !== -1) {
 		cec_client.stdin.write('tx 10:47:52:50:69'); // Set OSD String to 'RPi'
-		if (cec_callback) {
-			let callback = cec_callback;
-			cec_callback = null;
-			callback();
-		}
-	} else if (data.indexOf('>> 0f:36') !== -1) {
+	} else if (data.indexOf('>> 0f:36') !== -1 || data.indexOf('>> 01:90:00') !== -1) {
 		if (cec_callback) {
 			let callback = cec_callback;
 			cec_callback = null;
 			callback();
 		}
 	}
-	cec_output.push(data);
 });
 
 module.exports = function(homebridge) {
@@ -65,16 +59,15 @@ TVPower.prototype = {
 	},
 
 	getState: function(callback) {
-		cec_output = [];
 		cec_client.stdin.write('tx 10:8f'); // 'pow 0'
+		cec_callback = function () {
+			callback(null, true);
+		};
 		setTimeout(function () {
-			let success = false;
-			for (let i in cec_output) {
-				if (cec_output[i].indexOf('>> 01:90:00') !== -1) {
-					success = true;
-				}
+			if (cec_callback !== null) {
+				cec_callback = null;
+				callback(null, false);
 			}
-			callback(null, success);
 		}, 300);
 	},
 
