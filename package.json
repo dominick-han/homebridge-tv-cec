@@ -1,6 +1,6 @@
 {
   "name": "homebridge-hdmi-cec",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Homebridge support for TV power on/off, source selection, using HDMI-CEC",
   "main": "index.js",
   "keywords": [
