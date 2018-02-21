@@ -1,10 +1,19 @@
 let Service, Characteristic;
 const { spawn } = require('child_process');
 const cec_client = spawn('cec-client', ['-d', '8']);
-let cec_output = [];
+let cec_output = [], on = false;
 
 cec_client.stdout.on('data', function(data) {
-	cec_output.push(data.toString());
+	data = data.toString();
+	if (data.indexOf('>> 01:46') !== -1) {
+		cec_client.stdin.write('tx 10:47:52:50:69'); // Set OSD String to 'RPi'
+		console.log("TV ON");
+		on = true;
+	} else if (data.indexOf('>> 0f:36') !== -1) {
+		console.log("TV OFF");
+		on = false;
+	}
+	cec_output.push(data);
 });
 
 module.exports = function(homebridge) {
@@ -25,7 +34,7 @@ CECPlatform.prototype = {
 };
 
 function TVPower(log, config) {
-	config.name = config.name || "TV";
+	config.name = config.name || 'TV';
 	this.log = log;
 	this.config = config;
 	this.name = config.name;
@@ -50,22 +59,30 @@ TVPower.prototype = {
 	},
 
 	getState: function(callback) {
-		this.log("getState()");
+		this.log('getState()');
 		cec_output = [];
-		cec_client.stdin.write("tx 10:8f");
+		cec_client.stdin.write('tx 10:8f'); // 'pow 0'
 		setTimeout(function () {
 			let success = false;
 			for (let i in cec_output) {
-				if (cec_output[i].indexOf("01:90:00") !== -1) {
+				if (cec_output[i].indexOf('>> 01:90:00') !== -1) {
 					success = true;
 				}
 			}
-			callback(null, success);
+			on = success;
+			callback(null, on);
 		}, 300);
 	},
 
-	setState: function(on, callback) {
+	setState: async function(state, callback) {
 		this.log(`setState(${on})`);
+		if (state) {
+			cec_client.stdin.write('tx 10:04'); // 'pow 0'
+		} else {
+			cec_client.stdin.write('tx 10:36'); // 'pow 0'
+		}
+		while (on !== state) {
+		}
 		callback();
 	}
 };
