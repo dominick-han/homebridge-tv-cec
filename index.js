@@ -1,17 +1,23 @@
 let Service, Characteristic;
 const { spawn } = require('child_process');
 const cec_client = spawn('cec-client', ['-d', '8']);
-let cec_output = [], on = false;
+let cec_output = [], cec_callback = null;
 
 cec_client.stdout.on('data', function(data) {
 	data = data.toString();
 	if (data.indexOf('>> 01:46') !== -1) {
 		cec_client.stdin.write('tx 10:47:52:50:69'); // Set OSD String to 'RPi'
-		console.log("TV ON");
-		on = true;
+		if (cec_callback) {
+			let callback = cec_callback;
+			cec_callback = null;
+			callback();
+		}
 	} else if (data.indexOf('>> 0f:36') !== -1) {
-		console.log("TV OFF");
-		on = false;
+		if (cec_callback) {
+			let callback = cec_callback;
+			cec_callback = null;
+			callback();
+		}
 	}
 	cec_output.push(data);
 });
@@ -59,7 +65,6 @@ TVPower.prototype = {
 	},
 
 	getState: function(callback) {
-		this.log('getState()');
 		cec_output = [];
 		cec_client.stdin.write('tx 10:8f'); // 'pow 0'
 		setTimeout(function () {
@@ -69,20 +74,16 @@ TVPower.prototype = {
 					success = true;
 				}
 			}
-			on = success;
-			callback(null, on);
+			callback(null, success);
 		}, 300);
 	},
 
-	setState: async function(state, callback) {
-		this.log(`setState(${on})`);
+	setState: function(state, callback) {
 		if (state) {
 			cec_client.stdin.write('tx 10:04'); // 'pow 0'
 		} else {
 			cec_client.stdin.write('tx 10:36'); // 'pow 0'
 		}
-		while (on !== state) {
-		}
-		callback();
+		cec_callback = callback;
 	}
 };
