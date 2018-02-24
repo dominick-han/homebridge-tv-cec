@@ -81,7 +81,7 @@ TVPower.prototype = {
 				cec_client.stdin.write('tx 10:36\n'); // 'standby 0'
 			}
 			cec_callback = function () {
-				callback(null, state);
+				callback(null);
 			};
 		}
 	}
