@@ -6,7 +6,7 @@ let cec_callback = null, powerSwitch = null;
 cec_client.stdout.on('data', function(data) {
 	data = data.toString();
 	if (data.indexOf('<< 10:47:43:45:43') !== -1) {
-		cec_client.stdin.write('tx 10:47:52:50:69'); // Set OSD String to 'RPi'
+		cec_client.stdin.write('tx 10:47:52:50:69\n'); // Set OSD String to 'RPi'
 	} else if (data.indexOf('>> 0f:36') !== -1 || data.indexOf('>> 01:90:00') !== -1) {
 		if (cec_callback) {
 			let callback = cec_callback;
@@ -59,7 +59,7 @@ TVPower.prototype = {
 	},
 
 	getState: function(callback) {
-		cec_client.stdin.write('tx 10:8f'); // 'pow 0'
+		cec_client.stdin.write('tx 10:8f\n'); // 'pow 0'
 		cec_callback = function () {
 			callback(null, true);
 		};
@@ -76,9 +76,9 @@ TVPower.prototype = {
 			callback();
 		} else {
 			if (state) {
-				cec_client.stdin.write('tx 10:04'); // 'on 0'
+				cec_client.stdin.write('tx 10:04\n'); // 'on 0'
 			} else {
-				cec_client.stdin.write('tx 10:36'); // 'standby 0'
+				cec_client.stdin.write('tx 10:36\n'); // 'standby 0'
 			}
 			cec_callback = function () {
 				callback(null, state);
