@@ -5,7 +5,7 @@ let cec_callback = null, powerSwitch = null;
 
 cec_client.stdout.on('data', function(data) {
 	data = data.toString();
-	if (data.indexOf('>> 01:46') !== -1) {
+	if (data.indexOf('<< 10:47') !== -1) {
 		powerSwitch.setCharacteristic(Characteristic.On, true);
 		cec_client.stdin.write('tx 10:47:52:50:69'); // Set OSD String to 'RPi'
 	} else if (data.indexOf('>> 0f:36') !== -1 || data.indexOf('>> 01:90:00') !== -1) {
