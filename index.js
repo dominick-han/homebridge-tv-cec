@@ -83,7 +83,7 @@ TVPower.prototype = {
 			}
 			cec_callback = function () {
 				powerSwitch.setCharacteristic(Characteristic.On, state);
-				callback();
+				callback(null, state);
 			};
 		}
 	}
