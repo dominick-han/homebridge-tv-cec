@@ -72,7 +72,7 @@ TVPower.prototype = {
 	},
 
 	setState: function(state, callback) {
-		if (state === powerSwitch.getCharacteristic(Characteristic.On)) {
+		if (state === powerSwitch.getCharacteristic(Characteristic.On).value) {
 			callback();
 		} else {
 			if (state) {
