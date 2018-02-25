@@ -3,13 +3,15 @@ const events = require('events');
 const { spawn } = require('child_process');
 const cec_client = spawn('cec-client', ['-d', '8']);
 let Log, powerSwitch = null;
-let justTurnedOff = false;
+let justTurnedOff = false, justTurnedOn = false;
 let tvEvent = new events.EventEmitter();
 let nullFunction = function() {};
 
 tvEvent.on("PowerOn", function() {
 	Log.debug("Power Status: on");
 	powerSwitch.getCharacteristic(Characteristic.On).updateValue(true);
+	justTurnedOn = true;
+	setTimeout(function() {justTurnedOn = false;}, 1000);
 });
 
 tvEvent.on("PowerOff", function() {
@@ -20,14 +22,15 @@ tvEvent.on("PowerOff", function() {
 });
 
 cec_client.stdout.on('data', function(data) {
-	data = data.toString();
-	if (data.indexOf('<< 10:47:43:45:43') !== -1) {
+	let traffic = data.toString();
+	Log.debug(traffic);
+	if (traffic.indexOf('<< 10:47:43:45:43') !== -1) {
 		cec_client.stdin.write('tx 10:47:52:50:69\n'); // Set OSD String to 'RPi'
 	}
-	if (data.indexOf('>> 0f:36') !== -1) {
+	if (traffic.indexOf('>> 0f:36') !== -1) {
 		tvEvent.emit('PowerOff');
 	}
-	if (data.indexOf('>> 01:90:00') !== -1) {
+	if (traffic.indexOf('>> 01:90:00') !== -1) {
 		if (!justTurnedOff) tvEvent.emit("PowerOn");
 	}
 });
@@ -75,20 +78,26 @@ Power.prototype = {
 
 	getState: function(callback) {
 		Log.debug("Power.getState()");
-		cec_client.stdin.write('tx 10:8f\n'); // 'pow 0'
-		let activated = false;
-		let handler = function () {
-			activated = true;
+		if (justTurnedOn) {
 			callback(null, true);
-		};
-		tvEvent.prependOnceListener("PowerOn", handler);
-		setTimeout(function () {
-			tvEvent.removeListener("PowerOn", handler);
-			if (!activated) {
-				callback(null, false);
-				tvEvent.emit("PowerOff");
-			}
-		}, 300);
+		} else if (justTurnedOff) {
+			callback(null, false);
+		} else {
+			cec_client.stdin.write('tx 10:8f\n'); // 'pow 0'
+			let activated = false;
+			let handler = function () {
+				activated = true;
+				callback(null, true);
+			};
+			tvEvent.prependOnceListener("PowerOn", handler);
+			setTimeout(function () {
+				tvEvent.removeListener("PowerOn", handler);
+				if (!activated) {
+					callback(null, false);
+					tvEvent.emit("PowerOff");
+				}
+			}, 300);
+		}
 	},
 
 	setState: function(state, callback) {
@@ -112,7 +121,7 @@ Power.prototype = {
 				if (!activated) {
 					callback("TV not responding");
 				}
-			}, state ? 15000 : 5000);
+			}, 15000);
 		}
 	}
 };
