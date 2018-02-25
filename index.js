@@ -4,7 +4,8 @@ const cec_client = spawn('cec-client', ['-d', '8']);
 let Service,
 	Characteristic,
 	Log,
-	powerSwitch = null,
+	Config,
+	powerSwitch,
 	justTurnedOff = false,
 	justTurnedOn = false,
 	tvEvent = new events.EventEmitter(),
@@ -46,35 +47,33 @@ module.exports = function (homebridge) {
 
 function CECPlatform(log, config) {
 	Log = log;
-	this.config = config;
+	Config = config;
 }
 
 CECPlatform.prototype = {
 	accessories: function (callback) {
-		callback([new Power(this.config)]);
+		callback([new Power()]);
 	}
 };
 
-function Power(config) {
-	config.name = config.name || 'TV';
-	this.config = config;
-	this.name = config.name;
+function Power() {
+	this.name = Config.name || 'TV';
 }
 
 Power.prototype = {
 	getServices: function () {
 		this.informationService = new Service.AccessoryInformation();
 		this.informationService
-			.setCharacteristic(Characteristic.Manufacturer, this.config.manufacturer || 'Dominick Han')
-			.setCharacteristic(Characteristic.Model, this.config.model || 'TV')
-			.setCharacteristic(Characteristic.SerialNumber, this.config.serial || 'N/A');
+			.setCharacteristic(Characteristic.Manufacturer, Config.manufacturer || 'Dominick Han')
+			.setCharacteristic(Characteristic.Model, Config.model || 'TV')
+			.setCharacteristic(Characteristic.SerialNumber, Config.serial || 'N/A');
 
-		powerSwitch = new Service.Switch(this.config.name);
+		powerSwitch = new Service.Switch(this.name);
 		powerSwitch
 			.getCharacteristic(Characteristic.On)
 			.on('get', this.getState.bind(this))
 			.on('set', this.setState.bind(this));
-		Log(`Initialized Power Switch`);
+		Log('Initialized Power Switch');
 
 		return [this.informationService, powerSwitch];
 	},
