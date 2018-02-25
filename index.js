@@ -8,12 +8,12 @@ let tvEvent = new events.EventEmitter();
 let nullFunction = function() {};
 
 tvEvent.on("PowerOn", function() {
-	Log("Power Status: on");
+	Log.debug("Power Status: on");
 	powerSwitch.getCharacteristic(Characteristic.On).updateValue(true);
 });
 
 tvEvent.on("PowerOff", function() {
-	Log("Power Status: off");
+	Log.debug("Power Status: off");
 	powerSwitch.getCharacteristic(Characteristic.On).updateValue(false);
 	justTurnedOff = true;
 	setTimeout(function() {justTurnedOff = false;}, 2000);
@@ -68,13 +68,13 @@ Power.prototype = {
 			.getCharacteristic(Characteristic.On)
 			.on('get', this.getState.bind(this))
 			.on('set', this.setState.bind(this));
-		Log(`Initialized ${this.config.name || 'TV'}`);
+		Log(`Initialized Power Switch`);
 
 		return [this.informationService, powerSwitch];
 	},
 
 	getState: function(callback) {
-		Log("Power.getState()");
+		Log.debug("Power.getState()");
 		cec_client.stdin.write('tx 10:8f\n'); // 'pow 0'
 		let activated = false;
 		let handler = function () {
@@ -92,7 +92,7 @@ Power.prototype = {
 	},
 
 	setState: function(state, callback) {
-		Log(`Power.setState(${state})`);
+		Log.debug(`Power.setState(${state})`);
 		if (state === powerSwitch.getCharacteristic(Characteristic.On).value) {
 			callback();
 			this.getState(nullFunction);
