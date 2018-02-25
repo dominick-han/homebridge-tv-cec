@@ -1,7 +1,23 @@
 let Service, Characteristic;
+const events = require('events');
 const { spawn } = require('child_process');
 const cec_client = spawn('cec-client', ['-d', '8']);
-let cec_callback = null, powerSwitch = null, justTurnedOff = false;
+let Log, powerSwitch = null;
+let justTurnedOff = false;
+let tvEvent = new events.EventEmitter();
+let nullFunction = function() {};
+
+tvEvent.on("PowerOn", function() {
+	Log("Power Status: on");
+	powerSwitch.getCharacteristic(Characteristic.On).updateValue(true);
+});
+
+tvEvent.on("PowerOff", function() {
+	Log("Power Status: off");
+	powerSwitch.getCharacteristic(Characteristic.On).updateValue(false);
+	justTurnedOff = true;
+	setTimeout(function() {justTurnedOff = false;}, 2000);
+});
 
 cec_client.stdout.on('data', function(data) {
 	data = data.toString();
@@ -9,22 +25,10 @@ cec_client.stdout.on('data', function(data) {
 		cec_client.stdin.write('tx 10:47:52:50:69\n'); // Set OSD String to 'RPi'
 	}
 	if (data.indexOf('>> 0f:36') !== -1) {
-		powerSwitch.getCharacteristic(Characteristic.On).updateValue(false);
-		justTurnedOff = true;
-		setTimeout(function() {justTurnedOff = false;}, 2000);
-		if (cec_callback) {
-			let callback = cec_callback;
-			cec_callback = null;
-			callback();
-		}
+		tvEvent.emit('PowerOff');
 	}
 	if (data.indexOf('>> 01:90:00') !== -1) {
-		powerSwitch.getCharacteristic(Characteristic.On).updateValue(!justTurnedOff);
-		if (cec_callback) {
-			let callback = cec_callback;
-			cec_callback = null;
-			callback();
-		}
+		if (!justTurnedOff) tvEvent.emit("PowerOn");
 	}
 });
 
@@ -35,19 +39,18 @@ module.exports = function(homebridge) {
 };
 
 function CECPlatform(log, config) {
-	this.log = log;
+	Log = log;
 	this.config = config;
 }
 
 CECPlatform.prototype = {
 	accessories: function(callback) {
-		callback([new TVPower(this.log, this.config)]);
+		callback([new TVPower(this.config)]);
 	}
 };
 
-function TVPower(log, config) {
+function TVPower(config) {
 	config.name = config.name || 'TV';
-	this.log = log;
 	this.config = config;
 	this.name = config.name;
 }
@@ -65,36 +68,51 @@ TVPower.prototype = {
 			.getCharacteristic(Characteristic.On)
 			.on('get', this.getState.bind(this))
 			.on('set', this.setState.bind(this));
-		this.log(`Initialized ${this.config.name || 'TV'}`);
+		Log(`Initialized ${this.config.name || 'TV'}`);
 
 		return [this.informationService, powerSwitch];
 	},
 
 	getState: function(callback) {
+		Log("TVPower.getState()");
 		cec_client.stdin.write('tx 10:8f\n'); // 'pow 0'
-		cec_callback = function () {
+		let activated = false;
+		let handler = function () {
+			activated = true;
 			callback(null, true);
 		};
+		tvEvent.prependOnceListener("PowerOn", handler);
 		setTimeout(function () {
-			if (cec_callback !== null) {
-				cec_callback = null;
+			tvEvent.removeListener("PowerOn", handler);
+			if (!activated) {
 				callback(null, false);
+				tvEvent.emit("PowerOff");
 			}
 		}, 300);
 	},
 
 	setState: function(state, callback) {
+		Log(`TVPower.setState(${state})`);
 		if (state === powerSwitch.getCharacteristic(Characteristic.On).value) {
 			callback();
+			this.getState(nullFunction);
 		} else {
-			if (state) {
-				cec_client.stdin.write('tx 10:04\n'); // 'on 0'
-			} else {
-				cec_client.stdin.write('tx 10:36\n'); // 'standby 0'
-			}
-			cec_callback = function () {
+			let activated = false;
+			let handler = function () {
+				activated = true;
 				callback(null);
 			};
+
+			// Send on or off signal
+			cec_client.stdin.write(state? 'tx 10:04\n' : 'tx 10:36\n');
+
+			tvEvent.prependOnceListener(state ? "PowerOn" : "PowerOff", handler);
+			setTimeout(function () {
+				tvEvent.removeListener(state ? "PowerOn" : "PowerOff", handler);
+				if (!activated) {
+					callback("TV not responding");
+				}
+			}, state ? 15000 : 5000);
 		}
 	}
 };
