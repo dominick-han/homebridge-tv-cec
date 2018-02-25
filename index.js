@@ -1,27 +1,30 @@
-let Service, Characteristic;
 const events = require('events');
 const { spawn } = require('child_process');
 const cec_client = spawn('cec-client', ['-d', '8']);
-let Log, powerSwitch = null;
-let justTurnedOff = false, justTurnedOn = false;
-let tvEvent = new events.EventEmitter();
-let nullFunction = function() {};
+let Service,
+	Characteristic,
+	Log,
+	powerSwitch = null,
+	justTurnedOff = false,
+	justTurnedOn = false,
+	tvEvent = new events.EventEmitter(),
+	nullFunction = function () {};
 
-tvEvent.on("PowerOn", function() {
-	Log.debug("Power Status: on");
+tvEvent.on('PowerOn', function () {
+	Log.debug('Power Status: on');
 	powerSwitch.getCharacteristic(Characteristic.On).updateValue(true);
 	justTurnedOn = true;
-	setTimeout(function() {justTurnedOn = false;}, 1000);
+	setTimeout(function () {justTurnedOn = false;}, 1000);
 });
 
-tvEvent.on("PowerOff", function() {
-	Log.debug("Power Status: off");
+tvEvent.on('PowerOff', function () {
+	Log.debug('Power Status: off');
 	powerSwitch.getCharacteristic(Characteristic.On).updateValue(false);
 	justTurnedOff = true;
-	setTimeout(function() {justTurnedOff = false;}, 2000);
+	setTimeout(function () {justTurnedOff = false;}, 2000);
 });
 
-cec_client.stdout.on('data', function(data) {
+cec_client.stdout.on('data', function (data) {
 	let traffic = data.toString();
 	Log.debug(traffic);
 	if (traffic.indexOf('<< 10:47:43:45:43') !== -1) {
@@ -31,11 +34,11 @@ cec_client.stdout.on('data', function(data) {
 		tvEvent.emit('PowerOff');
 	}
 	if (traffic.indexOf('>> 01:90:00') !== -1) {
-		if (!justTurnedOff) tvEvent.emit("PowerOn");
+		if (!justTurnedOff) tvEvent.emit('PowerOn');
 	}
 });
 
-module.exports = function(homebridge) {
+module.exports = function (homebridge) {
 	Service = homebridge.hap.Service;
 	Characteristic = homebridge.hap.Characteristic;
 	homebridge.registerPlatform('homebridge-hdmi-cec', 'CEC', CECPlatform);
@@ -47,7 +50,7 @@ function CECPlatform(log, config) {
 }
 
 CECPlatform.prototype = {
-	accessories: function(callback) {
+	accessories: function (callback) {
 		callback([new Power(this.config)]);
 	}
 };
@@ -59,7 +62,7 @@ function Power(config) {
 }
 
 Power.prototype = {
-	getServices: function() {
+	getServices: function () {
 		this.informationService = new Service.AccessoryInformation();
 		this.informationService
 			.setCharacteristic(Characteristic.Manufacturer, this.config.manufacturer || 'Dominick Han')
@@ -76,8 +79,8 @@ Power.prototype = {
 		return [this.informationService, powerSwitch];
 	},
 
-	getState: function(callback) {
-		Log.debug("Power.getState()");
+	getState: function (callback) {
+		Log.debug('Power.getState()');
 		if (justTurnedOn) {
 			callback(null, true);
 		} else if (justTurnedOff) {
@@ -89,18 +92,18 @@ Power.prototype = {
 				activated = true;
 				callback(null, true);
 			};
-			tvEvent.prependOnceListener("PowerOn", handler);
+			tvEvent.prependOnceListener('PowerOn', handler);
 			setTimeout(function () {
-				tvEvent.removeListener("PowerOn", handler);
+				tvEvent.removeListener('PowerOn', handler);
 				if (!activated) {
 					callback(null, false);
-					tvEvent.emit("PowerOff");
+					tvEvent.emit('PowerOff');
 				}
 			}, 300);
 		}
 	},
 
-	setState: function(state, callback) {
+	setState: function (state, callback) {
 		Log.debug(`Power.setState(${state})`);
 		if (state === powerSwitch.getCharacteristic(Characteristic.On).value) {
 			callback();
@@ -113,13 +116,13 @@ Power.prototype = {
 			};
 
 			// Send on or off signal
-			cec_client.stdin.write(state? 'tx 10:04\n' : 'tx 10:36\n');
+			cec_client.stdin.write(state ? 'tx 10:04\n' : 'tx 10:36\n');
 
-			tvEvent.prependOnceListener(state ? "PowerOn" : "PowerOff", handler);
+			tvEvent.prependOnceListener(state ? 'PowerOn' : 'PowerOff', handler);
 			setTimeout(function () {
-				tvEvent.removeListener(state ? "PowerOn" : "PowerOff", handler);
+				tvEvent.removeListener(state ? 'PowerOn' : 'PowerOff', handler);
 				if (!activated) {
-					callback("TV not responding");
+					callback('TV not responding');
 				}
 			}, 15000);
 		}
