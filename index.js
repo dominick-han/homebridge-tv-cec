@@ -45,17 +45,17 @@ function CECPlatform(log, config) {
 
 CECPlatform.prototype = {
 	accessories: function(callback) {
-		callback([new TVPower(this.config)]);
+		callback([new Power(this.config)]);
 	}
 };
 
-function TVPower(config) {
+function Power(config) {
 	config.name = config.name || 'TV';
 	this.config = config;
 	this.name = config.name;
 }
 
-TVPower.prototype = {
+Power.prototype = {
 	getServices: function() {
 		this.informationService = new Service.AccessoryInformation();
 		this.informationService
@@ -74,7 +74,7 @@ TVPower.prototype = {
 	},
 
 	getState: function(callback) {
-		Log("TVPower.getState()");
+		Log("Power.getState()");
 		cec_client.stdin.write('tx 10:8f\n'); // 'pow 0'
 		let activated = false;
 		let handler = function () {
@@ -92,7 +92,7 @@ TVPower.prototype = {
 	},
 
 	setState: function(state, callback) {
-		Log(`TVPower.setState(${state})`);
+		Log(`Power.setState(${state})`);
 		if (state === powerSwitch.getCharacteristic(Characteristic.On).value) {
 			callback();
 			this.getState(nullFunction);
