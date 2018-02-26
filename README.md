@@ -27,3 +27,23 @@ Homebridge support for TV power on/off, source selection, using HDMI-CEC
 
 ### Full config (with optional parameters)
 See [config-sample.json](config-sample.json)
+
+## Configurations
+### Platform
+Field           | Required?    | Description
+----------------|--------------|-------------
+**platform**    | **Required** | Must be "CEC" (all UPPERCASE).
+**sources**     |  Required for source-switching  | A JSON array, containing objects specified from below.
+  name          |  *Optional*  | Name displayed in Home app.
+  manufacturer  |  *Optional*  | Manufacturer displayed in Home app.
+  model         |  *Optional*  | Model displayed in Home app.
+  serial        |  *Optional*  | Serial# displayed in Home app.
+
+### "sources" entry
+Field           | Required?    | Description
+----------------|--------------|-------------
+**name**        | **Required** | Name displayed in Home app.
+**address**     | **Required** | Physical address as specified in HDMI-CEC standard.
+  manufacturer  |  *Optional*  | Manufacturer displayed in Home app.
+  model         |  *Optional*  | Model displayed in Home app.
+  serial        |  *Optional*  | Serial# displayed in Home app.
