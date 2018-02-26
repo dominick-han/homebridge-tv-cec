@@ -1,7 +1,8 @@
 # homebridge-hdmi-cec
-[![NPM Version](https://img.shields.io/npm/v/homebridge-hdmi-cec.svg)](https://www.npmjs.com/package/homebridge-hdmi-cec)  
-Homebridge support for TV power on/off, source selection, using HDMI-CEC
+<a href="https://image.ibb.co/jpS9Sc/IMG_6428_1.png"><img src="https://image.ibb.co/hTUHDH/Screenshot.png" align="right" alt="Demo Screenshot" width="200px"></a>
 
+[![NPM Version](https://img.shields.io/npm/v/homebridge-hdmi-cec.svg)](https://www.npmjs.com/package/homebridge-hdmi-cec)  
+Homebridge support for TV power on/off, source selection, using HDMI-CEC  
 ## Installation
 1. Install [homebridge](https://github.com/nfarina/homebridge)
 2. Install this plugin using: `sudo npm install -g homebridge-hdmi-cec`
