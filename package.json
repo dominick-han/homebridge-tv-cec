@@ -4,7 +4,12 @@
   "description": "Homebridge support for TV power on/off, source selection, using HDMI-CEC",
   "main": "index.js",
   "keywords": [
-    "homebridge-plugin"
+    "homebridge-plugin",
+    "raspberrypi",
+    "rpi",
+    "cec",
+    "hdmi",
+    "tv"
   ],
   "repository": {
     "type": "git",
