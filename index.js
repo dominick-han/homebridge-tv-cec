@@ -8,6 +8,7 @@ let Service,
 	powerSwitch,
 	justTurnedOff = false,
 	justTurnedOn = false,
+	currAddress,
 	tvEvent = new events.EventEmitter(),
 	nullFunction = function () {};
 
@@ -52,7 +53,11 @@ function CECPlatform(log, config) {
 
 CECPlatform.prototype = {
 	accessories: function (callback) {
-		callback([new Power()]);
+		let list = [new Power()];
+		for (let i in Config.sources) {
+			list.push(new Source(Config.sources[i]));
+		}
+		callback(list);
 	}
 };
 
@@ -125,5 +130,51 @@ Power.prototype = {
 				}
 			}, 15000);
 		}
+	}
+};
+
+function Source(config) {
+	this.name = config.name;
+	let address = config.address.replace(/\D/g,'');
+	if (address.length !== 4) {
+		throw `${config.address} is not a valid physical address!`;
+	}
+	this.address = address.slice(0, 2) + ':' + address.slice(2);
+	this.config = config;
+}
+
+Source.prototype = {
+	getServices: function () {
+		this.informationService = new Service.AccessoryInformation();
+		this.informationService
+			.setCharacteristic(Characteristic.Manufacturer, this.config.manufacturer || 'Dominick Han')
+			.setCharacteristic(Characteristic.Model, this.config.model || 'TV')
+			.setCharacteristic(Characteristic.SerialNumber, this.config.serial || this.address);
+
+		this.switch = new Service.Switch(this.name);
+		this.switch
+			.getCharacteristic(Characteristic.On)
+			.on('get', this.getState.bind(this))
+			.on('set', this.setState.bind(this));
+		Log(`Initialized Source: ${this.name} at ${this.address}`);
+
+		return [this.informationService, this.switch];
+	},
+
+	getState: function (callback) {
+		Log.debug(`${this.name}.getState()`);
+		if (powerSwitch.getCharacteristic(Characteristic.On).value && this.address === currAddress) {
+			callback(null, true);
+		} else {
+			callback(null, false);
+		}
+	},
+
+	setState: function (state, callback) {
+		Log.debug(`${this.name}.setState(${state})`);
+		cec_client.stdin.write(`tx 1f:82:${this.address}\n`);
+		cec_client.stdin.write(`is\n`);
+		setTimeout(() => {this.switch.getCharacteristic(Characteristic.On).updateValue(false);}, 500);
+		callback();
 	}
 };
