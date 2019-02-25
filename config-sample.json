@@ -13,6 +13,7 @@
       "platform": "CEC",
       "manufacturer": "RCA",
       "model": "RTU5540-B",
+      "tv_service": true,
       "sources": [
         {
           "name": "Raspberry Pi",
