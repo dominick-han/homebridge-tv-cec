@@ -28,7 +28,8 @@ tvEvent.on('PowerOff', function () {
 
 cec_client.stdout.on('data', function (data) {
 	let traffic = data.toString();
-	Log.debug(traffic);
+	Log.info("====== Traffic:");
+	Log.info(traffic);
 	if (traffic.indexOf('<< 10:47:43:45:43') !== -1) {
 		cec_client.stdin.write('tx 10:47:52:50:69\n'); // Set OSD String to 'RPi'
 	}
@@ -54,7 +55,10 @@ function CECPlatform(log, config) {
 CECPlatform.prototype = {
 	accessories: function (callback) {
 		if (Config.tv_service) {
-			let tv = new Television();
+			Log.info("Creating Television");
+			let tv = [new Television()];
+			Log.info("++++++ TV: ");
+			Log.info(tv);
 			callback(tv);
 		} else {
 			let list = [new Power()];
@@ -191,7 +195,7 @@ function Television() {
 
 Television.prototype = {
 	getServices: function() {
-	
+		Log.info("XXXXXXXX In getServices()")
 		var informationService = new Service.AccessoryInformation();
 		informationService
 			.setCharacteristic(Characteristic.Manufacturer, Config.manufacturer || 'Dominick Han')
@@ -231,7 +235,8 @@ Television.prototype = {
 		// 	.on('set', this.remoteKeyPress.bind(this));
 			
 		this.enabledServices.push(this.tvService);
-		
+		Log.info("++++++ Enabled services:")
+		Log.info(this.enabledServices)
 		return this.enabledServices;
 	},
 
@@ -340,7 +345,7 @@ Television.prototype = {
 
 			if (addressSliced === input) {
 				cec_client.stdin.write(`tx 1f:82:${addressSliced}\n`);
-				ec_client.stdin.write(`is\n`);
+				cec_client.stdin.write(`is\n`);
 				setTimeout(() => {this.tvService.getCharacteristic(Characteristic.ActiveIdentifier).updateValue(addressSliced);}, 500);
 			}
 		})
