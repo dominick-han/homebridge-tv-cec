@@ -45,6 +45,7 @@ Field           | Required?    | Description
   manufacturer  |  *Optional*  | Manufacturer displayed in Home app.
   model         |  *Optional*  | Model displayed in Home app.
   serial        |  *Optional*  | Serial# displayed in Home app.
+**tv_service**  |  *Optional*  | Uses TV service available in iOS >12.2.
 
 ### "sources" entry
 Field           | Required?    | Description
