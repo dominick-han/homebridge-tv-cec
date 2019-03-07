@@ -1,27 +1,26 @@
 {
-  "name": "homebridge-hdmi-cec",
-  "version": "0.5.0",
-  "description": "Homebridge support for TV power on/off, source selection, using HDMI-CEC",
+  "name": "homebridge-tv-cec",
+  "version": "0.6.0",
+  "description": "Homebridge support for HomeKit TV accessory, using HDMI-CEC",
   "main": "index.js",
   "keywords": [
     "homebridge-plugin",
     "raspberrypi",
     "rpi",
-    "cec",
-    "hdmi",
+    "hdmi-cec",
     "tv"
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dominick-han/homebridge-hdmi-cec.git"
+    "url": "git+https://github.com/dominick-han/homebridge-tv-cec.git"
   },
   "author": "Dominick Han",
   "license": "GPL-3.0",
   "bugs": {
-    "url": "https://github.com/dominick-han/homebridge-hdmi-cec/issues"
+    "url": "https://github.com/dominick-han/homebridge-tv-cec/issues"
   },
-  "homepage": "https://github.com/dominick-han/homebridge-hdmi-cec#readme",
+  "homepage": "https://github.com/dominick-han/homebridge-tv-cec#readme",
   "engines": {
-    "homebridge": ">=0.2.0"
+    "homebridge": ">=0.4.46"
   }
 }
