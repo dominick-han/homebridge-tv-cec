@@ -1,20 +1,7 @@
 const events = require('events');
 const { spawn } = require('child_process');
 const cec_client = spawn('cec-client', ['-d', '8']);
-
 const tvEvent = new events.EventEmitter();
-cec_client.stdout.on('data', function (data) {
-	let traffic = data.toString();
-	if (traffic.indexOf('<< 10:47:43:45:43') !== -1) {
-		cec_client.stdin.write('tx 10:47:52:50:69\n'); // Set OSD String to 'RPi'
-	}
-	if (traffic.indexOf('>> 0f:36') !== -1) {
-		tvEvent.emit('POWER_OFF');
-	}
-	if (traffic.indexOf('>> 01:90:00') !== -1) {
-		tvEvent.emit('POWER_ON');
-	}
-});
 
 module.exports = homebridge => {
 	const {Service, Characteristic } = homebridge.hap;
@@ -55,6 +42,25 @@ module.exports = homebridge => {
 
 			this.informationService = new Service.AccessoryInformation();
 
+
+			cec_client.stdout.on('data', data => {
+				const traffic = data.toString();
+				console.log(traffic);
+				if (traffic.indexOf('<< 10:47:43:45:43') !== -1) {
+					cec_client.stdin.write('tx 10:47:52:50:69\n'); // Set OSD String to 'RPi'
+				}
+				if (traffic.indexOf('>> 0f:36') !== -1) {
+					tvEvent.emit('POWER_OFF');
+				}
+				if (traffic.indexOf('>> 01:90:00') !== -1) {
+					tvEvent.emit('POWER_ON');
+				}
+				const match = />> \df:82:(\d)0:00/.exec(traffic);
+				if (match) {
+					this.log.info(`Input is switched to ${match[1]}`);
+					this.tvService.getCharacteristic(Characteristic.ActiveIdentifier).updateValue(parseInt(match[1]));
+				}
+			});
 		}
 
 		getServices () {
