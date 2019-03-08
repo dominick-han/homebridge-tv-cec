@@ -35,7 +35,6 @@ module.exports = homebridge => {
 
 			cecClient.stdout.on('data', data => {
 				const traffic = data.toString();
-				console.log(traffic);
 				if (traffic.indexOf('<< 10:47:43:45:43') !== -1) {
 					cecClient.stdin.write('tx 10:47:52:50:69\n'); // Set OSD String to 'RPi'
 				}

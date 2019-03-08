@@ -2,7 +2,9 @@
 
 [![NPM Version](https://img.shields.io/npm/v/homebridge-tv-cec.svg)](https://www.npmjs.com/package/homebridge-tv-cec)  
 Homebridge support for TV power on/off, source selection, using HDMI-CEC
+
 Now with iOS 12.2 HomeKit TV Accessory
+
 Full supports scene/automation to turn on TV and switch to specific input
 
 ### Prerequisite
