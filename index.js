@@ -1,10 +1,10 @@
 const events = require('events');
 const { spawn } = require('child_process');
-const cec_client = spawn('cec-client', ['-d', '8']);
+const cecClient = spawn('cec-client', [ '-d', '8' ]);
 const tvEvent = new events.EventEmitter();
 
 module.exports = homebridge => {
-	const {Service, Characteristic } = homebridge.hap;
+	const { Service, Characteristic } = homebridge.hap;
 
 	class TV {
 		constructor(log, config) {
@@ -18,9 +18,7 @@ module.exports = homebridge => {
 				.on('set', this.setPowerStatus.bind(this));
 			this.tvService
 				.getCharacteristic(Characteristic.ActiveIdentifier)
-				// .on('get', this.getInput.bind(this))
 				.on('set', this.setInput.bind(this));
-
 
 			this.input1 = new Service.InputSource('Apple TV', 'inputSource3');
 			this.input1
@@ -30,7 +28,6 @@ module.exports = homebridge => {
 				.setCharacteristic(Characteristic.InputSourceType, Characteristic.InputSourceType.APPLICATION);
 			this.tvService.addLinkedService(this.input1);
 
-
 			this.input2 = new Service.InputSource('Raspberry Pi', 'inputSource4');
 			this.input2
 				.setCharacteristic(Characteristic.Identifier, 4)
@@ -39,14 +36,12 @@ module.exports = homebridge => {
 				.setCharacteristic(Characteristic.InputSourceType, Characteristic.InputSourceType.APPLICATION);
 			this.tvService.addLinkedService(this.input2);
 
-
 			this.informationService = new Service.AccessoryInformation();
 
-
-			cec_client.stdout.on('data', data => {
+			cecClient.stdout.on('data', data => {
 				const traffic = data.toString();
 				if (traffic.indexOf('<< 10:47:43:45:43') !== -1) {
-					cec_client.stdin.write('tx 10:47:52:50:69\n'); // Set OSD String to 'RPi'
+					cecClient.stdin.write('tx 10:47:52:50:69\n'); // Set OSD String to 'RPi'
 				}
 				if (traffic.indexOf('>> 0f:36') !== -1) {
 					tvEvent.emit('POWER_OFF');
@@ -60,44 +55,43 @@ module.exports = homebridge => {
 				}
 			});
 
-
 			let justSwitched = false;
 
-			tvEvent.on('POWER_ON',() => {
+			tvEvent.on('POWER_ON', () => {
 				if (!justSwitched) {
 					this.log.debug('CEC: Power on');
 					this.tvService.getCharacteristic(Characteristic.Active).updateValue(true);
 					justSwitched = true;
 					setTimeout(() => {
 						justSwitched = false;
-					}, 5000)
+					}, 5000);
 				}
 			});
 
-			tvEvent.on('POWER_OFF',() => {
+			tvEvent.on('POWER_OFF', () => {
 				if (!justSwitched) {
 					this.log.debug('CEC: Power off');
 					this.tvService.getCharacteristic(Characteristic.Active).updateValue(false);
 					justSwitched = true;
 					setTimeout(() => {
 						justSwitched = false;
-					}, 5000)
+					}, 5000);
 				}
 			});
 
-			tvEvent.on('INPUT_SWITCHED',port => {
+			tvEvent.on('INPUT_SWITCHED', port => {
 				this.log.debug(`CEC: Input switched to HDMI${port}`);
 				this.tvService.getCharacteristic(Characteristic.ActiveIdentifier).updateValue(parseInt(port));
 			});
 		}
 
-		getServices () {
-			return [this.informationService, this.tvService, this.input1, this.input2];
+		getServices() {
+			return [ this.informationService, this.tvService, this.input1, this.input2 ];
 		}
 
-		getPowerStatus (callback) {
+		getPowerStatus(callback) {
 			this.log.info(`Checking TV power status`);
-			cec_client.stdin.write('tx 10:8f\n'); // 'pow 0'
+			cecClient.stdin.write('tx 10:8f\n'); // 'pow 0'
 			const handler = () => {
 				handler.activated = true;
 				callback(null, true);
@@ -113,7 +107,7 @@ module.exports = homebridge => {
 			}, 1000);
 		}
 
-		setPowerStatus (value, callback) {
+		setPowerStatus(value, callback) {
 			this.log.info(`Turning TV ${value ? 'on' : 'fff'}`);
 			if (value === this.tvService.getCharacteristic(Characteristic.Active).value) {
 				callback();
@@ -134,14 +128,14 @@ module.exports = homebridge => {
 				}
 			}, 30000);
 			// Send on or off signal
-			cec_client.stdin.write(value ? 'tx 10:04\n' : 'tx 10:36\n');
+			cecClient.stdin.write(value ? 'tx 10:04\n' : 'tx 10:36\n');
 		}
 
-		setInput (value, callback) {
+		setInput(value, callback) {
 			this.log.info(`Switching to HDMI${value}`);
 			if (!this.tvService.getCharacteristic(Characteristic.Active).value) {
 				this.log.info(`TV is off; Retrying to switch input after TV turns on`);
-				tvEvent.once('POWER_ON', () => {this.setInput(value, callback)});
+				tvEvent.once('POWER_ON', () => { this.setInput(value, callback); });
 				return;
 			}
 			const handler = () => {
@@ -157,8 +151,8 @@ module.exports = homebridge => {
 					this.log.info(`TV is not switching to HDMI${value}`);
 				}
 			}, 30000);
-			cec_client.stdin.write(`tx 1f:82:${value}0:00\n`);
-			cec_client.stdin.write(`is\n`);
+			cecClient.stdin.write(`tx 1f:82:${value}0:00\n`);
+			cecClient.stdin.write(`is\n`);
 		}
 	}
 	homebridge.registerAccessory('homebridge-tv-cec', 'TV-CEC', TV);
