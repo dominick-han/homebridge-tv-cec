@@ -20,26 +20,22 @@ module.exports = homebridge => {
 				.getCharacteristic(Characteristic.ActiveIdentifier)
 				.on('set', this.setInput.bind(this));
 
-			this.input1 = new Service.InputSource('Apple TV', 'inputSource3');
-			this.input1
-				.setCharacteristic(Characteristic.Identifier, 3)
-				.setCharacteristic(Characteristic.ConfiguredName, 'Apple TV')
-				.setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
-				.setCharacteristic(Characteristic.InputSourceType, Characteristic.InputSourceType.APPLICATION);
-			this.tvService.addLinkedService(this.input1);
-
-			this.input2 = new Service.InputSource('Raspberry Pi', 'inputSource4');
-			this.input2
-				.setCharacteristic(Characteristic.Identifier, 4)
-				.setCharacteristic(Characteristic.ConfiguredName, 'Raspberry Pi')
-				.setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
-				.setCharacteristic(Characteristic.InputSourceType, Characteristic.InputSourceType.APPLICATION);
-			this.tvService.addLinkedService(this.input2);
+			this.inputs = Object.entries(this.config.devices).map(([port, name]) => {
+				const input = new Service.InputSource(name, `inputSource${port}`);
+				input
+					.setCharacteristic(Characteristic.Identifier, port)
+					.setCharacteristic(Characteristic.ConfiguredName, name)
+					.setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
+					.setCharacteristic(Characteristic.InputSourceType, Characteristic.InputSourceType.APPLICATION);
+				this.tvService.addLinkedService(input);
+				return input;
+			});
 
 			this.informationService = new Service.AccessoryInformation();
 
 			cecClient.stdout.on('data', data => {
 				const traffic = data.toString();
+				console.log(traffic);
 				if (traffic.indexOf('<< 10:47:43:45:43') !== -1) {
 					cecClient.stdin.write('tx 10:47:52:50:69\n'); // Set OSD String to 'RPi'
 				}
@@ -86,7 +82,7 @@ module.exports = homebridge => {
 		}
 
 		getServices() {
-			return [ this.informationService, this.tvService, this.input1, this.input2 ];
+			return [ this.informationService, this.tvService, ...this.inputs ];
 		}
 
 		getPowerStatus(callback) {
@@ -138,21 +134,23 @@ module.exports = homebridge => {
 				tvEvent.once('POWER_ON', () => { this.setInput(value, callback); });
 				return;
 			}
-			const handler = () => {
-				handler.activated = true;
-				callback();
-				this.log.info(`TV is switched to HDMI${value}`);
-			};
-			tvEvent.once('INPUT_SWITCHED', handler);
-			setTimeout(() => {
-				tvEvent.removeListener('INPUT_SWITCHED', handler);
-				if (!handler.activated) {
-					callback(`TV is not switching to HDMI${value}`);
-					this.log.info(`TV is not switching to HDMI${value}`);
-				}
-			}, 30000);
+			// const handler = () => {
+			// 	handler.activated = true;
+			// 	callback();
+			// 	this.log.info(`TV is switched to HDMI${value}`);
+			// };
+			// tvEvent.once('INPUT_SWITCHED', handler);
+			// setTimeout(() => {
+			// 	tvEvent.removeListener('INPUT_SWITCHED', handler);
+			// 	if (!handler.activated) {
+			// 		callback(`TV is not switching to HDMI${value}`);
+			// 		this.log.info(`TV is not switching to HDMI${value}`);
+			// 	}
+			// }, 30000);
 			cecClient.stdin.write(`tx 1f:82:${value}0:00\n`);
 			cecClient.stdin.write(`is\n`);
+			callback();
+				this.log.info(`Sent CEC command to switch to HDMI${value}`);
 		}
 	}
 	homebridge.registerAccessory('homebridge-tv-cec', 'TV-CEC', TV);
