@@ -24,7 +24,7 @@ module.exports = homebridge => {
 				const input = new Service.InputSource(name, `inputSource${port}`);
 				input
 					.setCharacteristic(Characteristic.Identifier, port)
-					.setCharacteristic(Characteristic.ConfiguredName, name)
+					.setCharacteristic(Characteristic.ConfiguredName, `${name}`)
 					.setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
 					.setCharacteristic(Characteristic.InputSourceType, Characteristic.InputSourceType.APPLICATION);
 				this.tvService.addLinkedService(input);
